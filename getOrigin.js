@@ -1,3 +1,4 @@
+"use strict"
 var fs = require('fs');
 var zlib = require('zlib');
 var source_dir = '/source';

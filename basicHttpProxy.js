@@ -1,5 +1,5 @@
 // 基本http代理
-
+"use strict"
 var http = require('http');
 var url = require('url');
 var request = require('request');
