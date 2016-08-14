@@ -6,6 +6,8 @@ var fs = require('fs');
 var needlist = require('./configs/list');
 
 var filemap = JSON.parse(fs.readFileSync('./configs/map.json', 'utf8') || '{}');
+// 存储 二进制文件（响应体） 的文件夹
+var buf_dir = '/buffer';
 
 if (!fs.existsSync('./files')) {
 	fs.mkdirSync('./files');
@@ -38,6 +40,7 @@ var server = http.createServer((req, res) => {
 			// 创建该页面的文件目录
 			if (!fs.existsSync(_dir)) {
 				fs.mkdirSync(_dir);
+				fs.mkdirSync(_dir + buf_dir);
 			}
 		}
 
@@ -47,7 +50,7 @@ var server = http.createServer((req, res) => {
 			console.log('from cache: ' + _uri);
 			// 存在本地文件 之间返回当初保存的头与内容
 			res.writeHead(200, _map[_uri].headers);
-			fs.createReadStream(_dir + '/' + _map[_uri].filename).pipe(res);
+			fs.createReadStream(_dir + buf_dir + '/' + _map[_uri].filename).pipe(res);
 		} else {
 			_map[_uri] = Object.create(null);
 			// 对应保存的本地文件名
@@ -74,7 +77,7 @@ var server = http.createServer((req, res) => {
 				// 保存响应头
 				_map[_uri].headers = p_res.headers;
 				// 保存到本地文件
-				p_res.pipe(fs.createWriteStream(_dir + '/' + newFilePath));
+				p_res.pipe(fs.createWriteStream(_dir + buf_dir + '/' + newFilePath));
 			});
 			p_req.on('error', (err) => {
 				console.log(err);
