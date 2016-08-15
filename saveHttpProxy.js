@@ -17,6 +17,7 @@ var server = http.createServer((req, res) => {
 	// 获取本次请求的 源地址
 	var _url = url.parse(req.url);
 	var _referer;
+
 	if (req.headers.referer) {
 		// 加载的是页面资源
 		_referer = req.headers.referer;
@@ -25,18 +26,33 @@ var server = http.createServer((req, res) => {
 		_referer = _url.protocol + '//' + _url.host + _url.path;
 	}
 
-	// 判断源地址是否在列表中
+	// 判断源地址是否在抓取列表中
+	let inNeed = false;
 	if (needlist[_referer]) {
+		inNeed = true;
+	} else {
+		// 判断源地址是否在抓取页面的所有资源数组中
+		for (let k in filemap) {
+			if (filemap[k].resources.indexOf(_referer)) {
+				inNeed = true;
+				_referer = k;
+				break;
+			}
+		}	
+	}
+	
+	if (inNeed) {
 		// 本次请求资源的 地址
 		// 把 queryString 从 url.path 里去掉，之后再访问时只以path为唯一标识，不带queryString
 		let rawUri = _url.path.split('?');
 		let _uri = _url.protocol + '//' + _url.host + rawUri[0];
 		// referer页面的文件目录
 		let _dir = './files/' + _referer.replace(/[\/,\\,\:,\*,\?,\",<,>,|,\.]/g, '_');
-		
+		// console.log(_uri);
 		if (!filemap[_referer]) {
 			// 首次访问
 			filemap[_referer] = Object.create(null);
+			filemap[_referer].resources = [];
 			// 创建该页面的文件目录
 			if (!fs.existsSync(_dir)) {
 				fs.mkdirSync(_dir);
@@ -52,6 +68,8 @@ var server = http.createServer((req, res) => {
 			res.writeHead(200, _map[_uri].headers);
 			fs.createReadStream(_dir + buf_dir + '/' + _map[_uri].filename).pipe(res);
 		} else {
+			// 保存该资源至该抓取页面的所需资源数组
+			_map.resources.push(_uri);
 			_map[_uri] = Object.create(null);
 			// 对应保存的本地文件名
 			let newFilePath = _uri.replace(/[\/,\\,\:,\*,\?,\",<,>,|,\.]/g, '_');
@@ -67,7 +85,7 @@ var server = http.createServer((req, res) => {
 				host: _url.host,
 				method: req.method,
 				path: _url.path, // 初次请求该资源时用原始path，带有queryString
-				headers: req.headers
+				headers: req.headers,
 			};
 			let p_req = http.request(options, (p_res) => {
 				console.log(options.method + ' ' + p_res.statusCode + ' and cached : ' + options.host + options.path);

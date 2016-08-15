@@ -7,8 +7,6 @@ var fs = require('fs');
 
 var server = http.createServer((req, res) => {
 	// 获取本次请求信息
-	// 禁用缓存
-	// req.headers['cache-control'] = 'no-cache';
 	var options = {
 		protocol: 'http:',
 		host: req.headers.host,
@@ -19,12 +17,12 @@ var server = http.createServer((req, res) => {
 	// req, p_res 都是IncomingMessage实例，前者是sever接收请求，后者是node作为客户端发起请求接收的响应，后者才具有statusCode属性
 	// IncomingMessage是stream.Readable的实例
 	// res是ServerResPonse的实例，继承自stram.Writable
-	// stram类实例可以使用pipe方法来简化代码
+	// stream类实例可以使用pipe方法来简化代码
 	var p_req = http.request(options, (p_res) => {
+		console.log(options.method + ' ' + p_res.statusCode + ' : ' + options.host + options.path);
 		// 发起对目的url的请求
 		res.writeHead(p_res.statusCode, p_res.headers);
-		console.log(options.method + ' ' + p_res.statusCode + ' : ' + options.host + options.path);
-		// chunk 是Buffer实例
+		//chunk 是Buffer实例
 		// p_res.on('data', (chunk) => {
 		// 	res.write(chunk);
 		// });
@@ -38,7 +36,7 @@ var server = http.createServer((req, res) => {
 		console.log(err);
 		res.end('proxy wrong!');
 	});
-	// // 发送请求体
+	// 发送请求体
 	// req.on('data', (chunk) => {
 	// 	p_req.write(chunk);
 	// });
