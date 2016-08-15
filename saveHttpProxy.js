@@ -42,10 +42,8 @@ var server = http.createServer((req, res) => {
 	}
 	
 	if (inNeed) {
-		// 本次请求资源的 地址
-		// 把 queryString 从 url.path 里去掉，之后再访问时只以path为唯一标识，不带queryString
-		let rawUri = _url.path.split('?');
-		let _uri = _url.protocol + '//' + _url.host + rawUri[0];
+		// 本次请求资源的 地址=
+		let _uri = _url.protocol + '//' + _url.host + _url.path;
 		// referer页面的文件目录
 		let _dir = './files/' + _referer.replace(/[\/,\\,\:,\*,\?,\",<,>,|,\.]/g, '_');
 		// console.log(_uri);
@@ -74,10 +72,6 @@ var server = http.createServer((req, res) => {
 			// 对应保存的本地文件名
 			let newFilePath = _uri.replace(/[\/,\\,\:,\*,\?,\",<,>,|,\.]/g, '_');
 			_map[_uri].filename = newFilePath;
-			// 保存queryString
-			if (rawUri[1]) {
-				_map[_uri].qs = rawUri[1];	
-			}
 			// 禁用缓存 向目的地址请求资源
 			req.headers['cache-control'] = 'no-cache';
 			let options = {
@@ -127,10 +121,16 @@ var server = http.createServer((req, res) => {
 
 });
 
-process.on('SIGINT', () => {
-	console.log('goodbye! 配置已更新.');
-	fs.writeFileSync('./configs/map.json', JSON.stringify(filemap), 'utf8');
-	process.exit();
+// process.on('SIGINT', () => {
+// 	fs.writeFileSync('./configs/map.json', JSON.stringify(filemap), 'utf8');
+// 	process.exit();
+// });
+
+process.stdin.on('readable', () => {
+	let chunk = process.stdin.read();
+	if (chunk) {
+		fs.writeFileSync('./configs/map.json', JSON.stringify(filemap), 'utf8');
+	}
 });
 
 server.listen(10000);

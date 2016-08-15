@@ -25,7 +25,14 @@ if (!fs.existsSync(_dir)) {
 }
 
 for (let uri in map) {
+	if (uri === 'resources') { continue; }
 	// 资源的路径与文件名
+	let rawUriStr = uri;
+	let rawUri = uri.split('?');
+	// 路径，querystring
+	uri = rawUri[0];
+	let queryString = rawUri.length > 1 ? rawUri[1] : '';
+
 	let paths = uri.match(/\:\/\/.*/)[0].substr(3).split('/');
 	let protocol = uri.match(/.*\:\/\//)[0];
 	let filename = paths.pop();
@@ -35,7 +42,7 @@ for (let uri in map) {
 	}
 	paths[0] = protocol + paths[0];
 	// 资源mime类型
-	let contentType = map[uri].headers['content-type'];
+	let contentType = map[rawUriStr].headers['content-type'];
 	let charset = '';
 	if (contentType) {
 		contentType = contentType.split(';');
@@ -44,7 +51,7 @@ for (let uri in map) {
 		charset = contentType[1] && contentType[1].toLowerCase().indexOf('charset') > -1 ? contentType[1].toLowerCase().split('=').pop() : '';
 		let extname = mimes[type];
 		// 属于mime列表中的类型
-		if (extname && filename.split('.').pop() !== extname) {
+		if (extname && (filename.indexOf('.') < 0 || filename.split('.').pop() !== extname)) {
 			// 加上文件扩展名
 			filename += '.' + extname;
 		}
@@ -58,10 +65,23 @@ for (let uri in map) {
 		}
 	});
 	
+	// 请求同一个接口但querystring不同的情况
+	if (queryString) {
+		if (!fs.existsSync(now_dir + '/qsMap.txt')) {
+			fs.writeFileSync(now_dir + '/qsMap.txt', rawUriStr + ' : ' + filename + '\n', 'utf8');
+		} else {
+			if (fs.existsSync(now_dir + '/' + filename)) {
+				// 重名文件 打个标记
+				filename += '-' + new Date().getTime().toString();
+			}
+			fs.appendFileSync(now_dir + '/qsMap.txt', rawUriStr + ' : ' + filename + '\n', 'utf8');
+		}
+	}
+
 	let ws = charset ? fs.createWriteStream(now_dir + '/' + filename, charset) : fs.createWriteStream(now_dir + '/' + filename);
-	let rs = fs.createReadStream(buf_dir + '/' + map[uri].filename);
+	let rs = fs.createReadStream(buf_dir + '/' + map[rawUriStr].filename);
 	// gzip, compress, deflate, identity
-	if (map[uri].headers['content-encoding'] && map[uri].headers['content-encoding'].toLowerCase() === 'gzip') {
+	if (map[rawUriStr].headers['content-encoding'] && map[rawUriStr].headers['content-encoding'].toLowerCase() === 'gzip') {
 		// gzip 解压
 		let gunzipStream = zlib.createGunzip();
 		rs.pipe(gunzipStream).pipe(ws);
