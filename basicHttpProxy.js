@@ -1,8 +1,9 @@
-// 基本http代理
+
+// 基本http透明代理
+
 "use strict"
 var http = require('http');
 var url = require('url');
-var request = require('request');
 var fs = require('fs');
 
 var server = http.createServer((req, res) => {
@@ -22,13 +23,13 @@ var server = http.createServer((req, res) => {
 		console.log(options.method + ' ' + p_res.statusCode + ' : ' + options.host + options.path);
 		// 发起对目的url的请求
 		res.writeHead(p_res.statusCode, p_res.headers);
-		//chunk 是Buffer实例
-		// p_res.on('data', (chunk) => {
-		// 	res.write(chunk);
-		// });
-		// p_res.on('end', () => {
-		// 	res.end();
-		// });
+		// chunk 是Buffer实例
+		p_res.on('data', (chunk) => {
+			res.write(chunk);
+		});
+		p_res.on('end', () => {	
+			res.end();
+		});
 		p_res.pipe(res);
 	});
 
@@ -37,20 +38,14 @@ var server = http.createServer((req, res) => {
 		res.end('proxy wrong!');
 	});
 	// 发送请求体
-	// req.on('data', (chunk) => {
-	// 	p_req.write(chunk);
-	// });
-	// req.on('end', () => {
-	// 	// 结束请求
-	// 	p_req.end();		
-	// });
+	req.on('data', (chunk) => {
+		p_req.write(chunk);
+	});
+	req.on('end', () => {
+		// 结束请求
+		p_req.end();		
+	});
 	req.pipe(p_req);
-
-	// request({
-	// 	method: req.method,
-	// 	url: url.parse(req.url),
-	// 	headers: req.headers
-	// }).pipe(res);
 
 });
 

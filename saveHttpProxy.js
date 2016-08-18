@@ -70,7 +70,8 @@ var server = http.createServer((req, res) => {
 			_map.resources.push(_uri);
 			_map[_uri] = Object.create(null);
 			// 对应保存的本地文件名
-			let newFilePath = _uri.replace(/[\/,\\,\:,\*,\?,\",<,>,|,\.]/g, '_');
+			// let newFilePath = _uri.replace(/[\/,\\,\:,\*,\?,\",<,>,|,\.]/g, '_');
+			let newFilePath = new Date().getTime().toString();
 			_map[_uri].filename = newFilePath;
 			// 禁用缓存 向目的地址请求资源
 			req.headers['cache-control'] = 'no-cache';
